@@ -9,49 +9,93 @@ import './index.css';
     )
   }
   function calculateWinner(squares) {
-  const lines = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6],
-  ];
-  for (let i = 0; i < lines.length; i++) {
-    const [a, b, c] = lines[i];
-    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return squares[a];
+  const rows = squares.length;
+  const cols = squares[0].length;
+  // 纵向判断是否有值相等
+  for(let i = 0; i < rows; i++) {
+    if(squares[i][0]) {
+      let flag = true;
+      for(let j = 1 ;j < cols ; j++) {
+        if(squares[i][j] !== squares[i][0]) {
+          flag = false;
+          break;
+        }
+      }
+      if(flag) {
+        // 如果有一个成功了则直接跳出来！
+        return flag
+      }
     }
   }
-  return null;
+  for(let i = 0; i < cols; i++) {
+    if(squares[0][i]) {
+      let flag = true;
+      for(let j = 1 ;j < rows ; j++) {
+        if(squares[j][i] !== squares[0][i]) {
+          flag = false;
+          break;
+        }
+      }
+      if(flag) {
+        // 如果有一个成功了则直接跳出来！
+        return flag
+      }
+    }
+  }
+  let flag = true
+  for(let i = 0; i < cols ; i++) {
+    if(squares[0][0]) {
+      if(squares[0][0] !== squares[i][i]) {
+        flag = false;
+        break;
+      }
+    } else {
+      flag = false;
+    }
+  }
+  flag = true
+  for(let i = 0, j = cols -1 ; i < cols ; i++, j--) {
+    if(squares[0][cols-1]) {
+      if(squares[0][cols-1] !== squares[i][j]) {
+        flag = false;
+        break;
+      }
+    } else {
+      flag = false;
+    }
+  }
+  if(flag) {
+    return flag
+  }
+  return false;
 }
   class Board extends React.Component {
-    renderSquare(i) {
-      return(<Square value= {this.props.squares[i]} 
-            onClick = {() => this.props.onClick(i) }
-      />);
+    renderSquare() {
+      // x 表示横坐标，y表示纵坐标
+     return this.props.squares.map((ele, y) => {
+        if(Array.isArray(ele)) {
+          return (
+            <div className="board-row" key={y}>
+            { 
+              ele.map((item, x)=> {
+              return (<Square value= {item} 
+                key= {x}
+                onClick = {() => 
+                  this.props.onClick(x,y)
+                }
+              />);
+              })
+            }
+            </div>
+          )
+        } else return null
+      })
     }
-  
+    
     render(props) {
       return (
         <div>
-          <div className="board-row">
-            {this.renderSquare(0)}
-            {this.renderSquare(1)}
-            {this.renderSquare(2)}
-          </div>
-          <div className="board-row">
-            {this.renderSquare(3)}
-            {this.renderSquare(4)}
-            {this.renderSquare(5)}
-          </div>
-          <div className="board-row">
-            {this.renderSquare(6)}
-            {this.renderSquare(7)}
-            {this.renderSquare(8)}
-          </div>
+        { this.renderSquare() }
         </div>
       );
     }
@@ -62,28 +106,47 @@ import './index.css';
         super();
         this.state = {
             history: [{
-                squares: new Array(9).fill(null)
+                // squares: new Array(9).fill(null)
+                squares: this.generate(3,3)
             }],
             xIsNext: true,
             stepNumber: 0,
         }
     }
-    handleClick(i) {
-        // const squares = this.props.squares.slice();
+    // row 表示几行，col表示多少列
+    generate(row, col) {
+      const arr = [];
+      for(let i = 0 ; i< row; i++)
+      {  
+        arr.push( Array(col).fill(null))
+      }
+      return arr;
+    }
+    handleClick(x,y) {
         const history = this.state.history;
         const current = history[history.length -1];
         const squares = current.squares.slice();
-        // console.log(squares)
-        if(!squares[i] && !calculateWinner(squares)) {
-        squares[i] = this.state.xIsNext ?'X': 'O';
-        this.setState({
-            history: history.concat([{
-                squares
-            }]),
-            xIsNext: !this.state.xIsNext,
-            stepNumber: history.length,
-        })
+        if(squares[y][x] || calculateWinner(squares)) {
+          return
         }
+        squares[y][x] = this.state.xIsNext ?'X': 'O';
+        this.setState({
+        history: history.concat([{
+            squares
+        }]),
+        xIsNext: !this.state.xIsNext,
+        stepNumber: history.length,
+        })
+        // if(!squares[i] && !calculateWinner(squares)) {
+        // squares[i] = this.state.xIsNext ?'X': 'O';
+        // this.setState({
+        //     history: history.concat([{
+        //         squares
+        //     }]),
+        //     xIsNext: !this.state.xIsNext,
+        //     stepNumber: history.length,
+        // })
+        // }
     }
     jumpTo(step) {
       this.setState({
@@ -94,14 +157,16 @@ import './index.css';
     render() {
       const history = this.state.history;
       const current = history[this.state.stepNumber];
-      const winner = calculateWinner(current.squares);
+      // const winner = calculateWinner(current.squares);
+
+      const winner = 0;
       const moves = history.map((step, move) => {
         const desc = move ?
         'Move #' + move :
         'Game start';
         return (
             <li>
-                <a href="#" key= {move} onClick={ () => this.jumpTo(move)}> {desc} </a>
+                <a href="123" key= {move} onClick={ () => this.jumpTo(move)}> {desc} </a>
             </li>
         )
       })
@@ -116,7 +181,7 @@ import './index.css';
           <div className="game-board">
             <Board 
             squares = { current.squares }
-            onClick = { (i) => this.handleClick(i) }
+            onClick = { (x,y) => this.handleClick(x,y) }
             />
           </div>
           <div className="game-info">
