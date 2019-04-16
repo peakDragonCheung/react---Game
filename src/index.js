@@ -14,11 +14,14 @@ import './index.css';
   // 纵向判断是否有值相等
   for(let i = 0; i < rows; i++) {
     if(squares[i][0]) {
-      let flag = true;
+      let flag = [];
+      flag.push([i,0])
       for(let j = 1 ;j < cols ; j++) {
         if(squares[i][j] !== squares[i][0]) {
           flag = false;
           break;
+        } else {
+          flag.push([i,j])
         }
       }
       if(flag) {
@@ -29,11 +32,15 @@ import './index.css';
   }
   for(let i = 0; i < cols; i++) {
     if(squares[0][i]) {
-      let flag = true;
+      // let flag = true;
+      let flag = [];
+      flag.push([0,i])
       for(let j = 1 ;j < rows ; j++) {
         if(squares[j][i] !== squares[0][i]) {
           flag = false;
           break;
+        } else {
+          flag.push([j,i])
         }
       }
       if(flag) {
@@ -42,23 +49,31 @@ import './index.css';
       }
     }
   }
-  let flag = true
+  let flag = [];
   for(let i = 0; i < cols ; i++) {
     if(squares[0][0]) {
       if(squares[0][0] !== squares[i][i]) {
         flag = false;
         break;
+      } else {
+        flag.push([i,i])
       }
     } else {
       flag = false;
     }
   }
-  flag = true
+  if(flag) {
+
+    return flag
+  }
+  flag = [];
   for(let i = 0, j = cols -1 ; i < cols ; i++, j--) {
     if(squares[0][cols-1]) {
       if(squares[0][cols-1] !== squares[i][j]) {
         flag = false;
         break;
+      } else {
+        flag.push([i,j])
       }
     } else {
       flag = false;
@@ -68,28 +83,46 @@ import './index.css';
     return flag
   }
   return false;
-}
+  }
+  function deepClone(oj) {
+    if(Array.isArray(oj)) {
+      return oj.map(el => {
+        return deepClone(el)
+      })
+    }
+    if(typeof oj === 'object' && oj) {
+      const object = {};
+      for (const key of oj) {
+         object[key] = oj[key]
+      }
+      return object;
+    }
+    if(typeof oj !== 'object') {
+      return oj;
+    }
+  }
+  function BoardRow(props) {
+    if(Array.isArray(props.ele)) {
+      return (
+        <div className="board-row" key={props.y}>
+        { 
+          props.ele.map((item, x)=> {
+          return (<Square value= {item} 
+            key= {x}
+            onClick = {() => 
+              props.onClick(x,props.y)
+            }
+          />);
+          })
+        }
+        </div>
+      )
+    } else return null
+  }
   class Board extends React.Component {
     renderSquare() {
       // x 表示横坐标，y表示纵坐标
-     return this.props.squares.map((ele, y) => {
-        if(Array.isArray(ele)) {
-          return (
-            <div className="board-row" key={y}>
-            { 
-              ele.map((item, x)=> {
-              return (<Square value= {item} 
-                key= {x}
-                onClick = {() => 
-                  this.props.onClick(x,y)
-                }
-              />);
-              })
-            }
-            </div>
-          )
-        } else return null
-      })
+     return this.props.squares.map((ele, y) => (<BoardRow onClick={this.props.onClick} ele={ele} y={y} /> ))
     }
     
     render(props) {
@@ -106,8 +139,8 @@ import './index.css';
         super();
         this.state = {
             history: [{
-                // squares: new Array(9).fill(null)
-                squares: this.generate(3,3)
+                // 在此处修改 生成的棋盘个数即可生成对应的数量，
+                squares: this.generate(4,4)
             }],
             xIsNext: true,
             stepNumber: 0,
@@ -124,29 +157,20 @@ import './index.css';
     }
     handleClick(x,y) {
         const history = this.state.history;
-        const current = history[history.length -1];
-        const squares = current.squares.slice();
+        const current = history[this.state.stepNumber];
+        const squares = deepClone(current.squares);
         if(squares[y][x] || calculateWinner(squares)) {
           return
         }
         squares[y][x] = this.state.xIsNext ?'X': 'O';
         this.setState({
         history: history.concat([{
-            squares
+            squares,
+            locat: `(${x+1}, ${y+1})`
         }]),
         xIsNext: !this.state.xIsNext,
         stepNumber: history.length,
         })
-        // if(!squares[i] && !calculateWinner(squares)) {
-        // squares[i] = this.state.xIsNext ?'X': 'O';
-        // this.setState({
-        //     history: history.concat([{
-        //         squares
-        //     }]),
-        //     xIsNext: !this.state.xIsNext,
-        //     stepNumber: history.length,
-        // })
-        // }
     }
     jumpTo(step) {
       this.setState({
@@ -157,16 +181,16 @@ import './index.css';
     render() {
       const history = this.state.history;
       const current = history[this.state.stepNumber];
-      // const winner = calculateWinner(current.squares);
+      const winner = calculateWinner(current.squares);
 
-      const winner = 0;
+      // const winner = 0;
       const moves = history.map((step, move) => {
         const desc = move ?
-        'Move #' + move :
+        'Move #' + step.locat :
         'Game start';
         return (
-            <li>
-                <a href="123" key= {move} onClick={ () => this.jumpTo(move)}> {desc} </a>
+            <li key= {move}>
+                <a href="#" key= {move} onClick={ () => this.jumpTo(move)}> {desc} </a>
             </li>
         )
       })
