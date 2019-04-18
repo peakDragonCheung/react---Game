@@ -2,21 +2,29 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
   function Square(props) {
+    const className = props.isSuccess?'line square': 'square'
     return (
-        <button className="square" onClick= { props.onClick }>
+        <button className={className} onClick= { props.onClick }>
          {props.value}
       </button>
     )
   }
+  function LineInput(props) {
+    return(
+      <div className="game-info">
+        <label htmlFor="lineNumber">请输入棋盘行数</label> <input onChange={(e) => props.onChange(e)} name="lineNumber" type="number"/>
+      </div>
+      )
+  }
   function calculateWinner(squares) {
   const rows = squares.length;
-  const cols = squares[0].length;
+  // const cols = squares[0].length;
   // 纵向判断是否有值相等
   for(let i = 0; i < rows; i++) {
     if(squares[i][0]) {
       let flag = [];
       flag.push([i,0])
-      for(let j = 1 ;j < cols ; j++) {
+      for(let j = 1 ;j < rows ; j++) {
         if(squares[i][j] !== squares[i][0]) {
           flag = false;
           break;
@@ -30,7 +38,7 @@ import './index.css';
       }
     }
   }
-  for(let i = 0; i < cols; i++) {
+  for(let i = 0; i < rows; i++) {
     if(squares[0][i]) {
       // let flag = true;
       let flag = [];
@@ -50,7 +58,7 @@ import './index.css';
     }
   }
   let flag = [];
-  for(let i = 0; i < cols ; i++) {
+  for(let i = 0; i < rows ; i++) {
     if(squares[0][0]) {
       if(squares[0][0] !== squares[i][i]) {
         flag = false;
@@ -67,9 +75,9 @@ import './index.css';
     return flag
   }
   flag = [];
-  for(let i = 0, j = cols -1 ; i < cols ; i++, j--) {
-    if(squares[0][cols-1]) {
-      if(squares[0][cols-1] !== squares[i][j]) {
+  for(let i = 0, j = rows -1 ; i < rows ; i++, j--) {
+    if(squares[0][rows-1]) {
+      if(squares[0][rows-1] !== squares[i][j]) {
         flag = false;
         break;
       } else {
@@ -107,8 +115,17 @@ import './index.css';
         <div className="board-row" key={props.y}>
         { 
           props.ele.map((item, x)=> {
+          let isSucc = false
+          if(Array.isArray(props.winner)) {
+            for (const iterator of props.winner ) {
+              if(iterator[0] === props.y && iterator[1] === x) {
+                isSucc = true
+              }
+            }
+          }
           return (<Square value= {item} 
             key= {x}
+            isSuccess = {isSucc}
             onClick = {() => 
               props.onClick(x,props.y)
             }
@@ -122,7 +139,7 @@ import './index.css';
   class Board extends React.Component {
     renderSquare() {
       // x 表示横坐标，y表示纵坐标
-     return this.props.squares.map((ele, y) => (<BoardRow onClick={this.props.onClick} ele={ele} y={y} /> ))
+     return this.props.squares.map((ele, y) => (<BoardRow onClick={this.props.onClick} winner={this.props.winner} ele={ele} y={y} /> ))
     }
     
     render(props) {
@@ -140,7 +157,7 @@ import './index.css';
         this.state = {
             history: [{
                 // 在此处修改 生成的棋盘个数即可生成对应的数量，
-                squares: this.generate(4,4)
+                squares: this.generate(3,3)
             }],
             xIsNext: true,
             stepNumber: 0,
@@ -148,6 +165,7 @@ import './index.css';
     }
     // row 表示几行，col表示多少列
     generate(row, col) {
+      console.log(row, col)
       const arr = [];
       for(let i = 0 ; i< row; i++)
       {  
@@ -178,12 +196,25 @@ import './index.css';
           xIsNext: (step % 2) ? false : true,
       })
     }
+    changeLineNum(e) {
+      this.setState({
+        history: [{
+          // 在此处修改 生成的棋盘个数即可生成对应的数量，
+          squares: this.generate(e.target.value? +e.target.value:3,e.target.value? +e.target.value:3)
+      }],
+      xIsNext: true,
+      stepNumber: 0,
+      })
+    }
     render() {
       const history = this.state.history;
       const current = history[this.state.stepNumber];
       const winner = calculateWinner(current.squares);
 
       // const winner = 0;
+      // winner.forEach(ele => {
+      //   current.squares[ele[0]][ele[1]].isSuccess = true
+      // })
       const moves = history.map((step, move) => {
         const desc = move ?
         'Move #' + step.locat :
@@ -205,6 +236,7 @@ import './index.css';
           <div className="game-board">
             <Board 
             squares = { current.squares }
+            winner = {winner}
             onClick = { (x,y) => this.handleClick(x,y) }
             />
           </div>
@@ -212,6 +244,7 @@ import './index.css';
             <div>{ status }</div>
             <ol>{ moves }</ol>
           </div>
+          <LineInput onChange={(e) => this.changeLineNum(e)} />
         </div>
       );
     }
